@@ -56,7 +56,7 @@ class MadMimi
   end
   
   def raise_exceptions
-    options[:raise_exceptions]
+    @api_settings[:raise_exceptions]
   end
 
   def username
