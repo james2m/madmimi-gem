@@ -193,7 +193,7 @@ class MadMimi
       http.start do |http|
         # Either Net::HTTP::Get or Net::HTTP::Post
         http_class = Net::HTTP.const_get(req_type.to_s.camelcase)
-        req = http _class.new(path)
+        req = http_class.new(path)
         req.set_form_data(form_data)
         @response = http.request(req)
         resp = @response.body.strip
