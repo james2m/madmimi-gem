@@ -48,6 +48,8 @@ class MadMimi
   SEARCH_PATH = '/audience_members/search.xml'
   MAILER_PATH = '/mailer'
   MAILER_TO_LIST_PATH = '/mailer/to_list'
+  
+  attr_reader :response
 
   def initialize(username, api_key)
     @api_settings = { :username => username, :api_key => api_key }
@@ -180,38 +182,24 @@ class MadMimi
     options = options.merge(default_opt)
     form_data = options.inject({}) { |m, (k, v)| m[k.to_s] = v; m }
     resp = href = ""
-    case req_type
-    when :get then
-      begin
+    begin
+      if transactional == true
+        http = Net::HTTP.new(BASE_URL, 443)
+        http.use_ssl = true
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      else
         http = Net::HTTP.new(BASE_URL, 80)
-        http.start do |http|
-          req = Net::HTTP::Get.new(path)
-          req.set_form_data(form_data)
-          response = http.request(req)
-          resp = response.body.strip
-        end
-        resp
-      rescue SocketError
-        raise "Host unreachable."
       end
-    when :post then
-      begin
-        if transactional == true
-          http = Net::HTTP.new(BASE_URL, 443)
-          http.use_ssl = true
-          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-        else
-          http = Net::HTTP.new(BASE_URL, 80)
-        end
-        http.start do |http|
-          req = Net::HTTP::Post.new(path)
-          req.set_form_data(form_data)
-          response = http.request(req)
-          resp = response.body.strip
-        end
-      rescue SocketError
-        raise "Host unreachable."
+      http.start do |http|
+        # Either Net::HTTP::Get or Net::HTTP::Post
+        http_class = Net::HTTP.const_get(req_type.to_s.camelcase)
+        req = http _class.new(path)
+        req.set_form_data(form_data)
+        @response = http.request(req)
+        resp = @response.body.strip
       end
+    rescue SocketError
+      raise "Host unreachable."
     end
   end
 
