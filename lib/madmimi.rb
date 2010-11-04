@@ -181,26 +181,25 @@ class MadMimi
   def do_request(path, req_type = :get, options = {}, transactional = false)
     options = options.merge(default_opt)
     form_data = options.inject({}) { |m, (k, v)| m[k.to_s] = v; m }
-    resp = href = ""
-    begin
-      if transactional == true
-        http = Net::HTTP.new(BASE_URL, 443)
-        http.use_ssl = true
-        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      else
-        http = Net::HTTP.new(BASE_URL, 80)
-      end
-      http.start do |http|
-        # Either Net::HTTP::Get or Net::HTTP::Post
-        http_class = Net::HTTP.const_get(req_type.to_s.camelcase)
-        req = http_class.new(path)
-        req.set_form_data(form_data)
-        @response = http.request(req)
-        resp = @response.body.strip
-      end
-    rescue SocketError
-      raise "Host unreachable."
+
+    if transactional == true
+      http = Net::HTTP.new(BASE_URL, 443)
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    else
+      http = Net::HTTP.new(BASE_URL, 80)
     end
+    
+    @response = http.start do |http|
+      # Either Net::HTTP::Get or Net::HTTP::Post
+      http_class = Net::HTTP.const_get(req_type.to_s.camelcase)
+      req = http_class.new(path)
+      req.set_form_data(form_data)
+      http.request(req)
+    end
+    
+    @response.body.strip
+
   end
 
   def build_csv(hash)
