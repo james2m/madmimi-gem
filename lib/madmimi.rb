@@ -51,8 +51,12 @@ class MadMimi
   
   attr_reader :response
 
-  def initialize(username, api_key)
-    @api_settings = { :username => username, :api_key => api_key }
+  def initialize(username, api_key, options = {})
+    @api_settings = options.merge({ :username => username, :api_key => api_key })
+  end
+  
+  def raise_exceptions
+    options[:raise_exceptions]
   end
 
   def username
@@ -197,6 +201,8 @@ class MadMimi
       req.set_form_data(form_data)
       http.request(req)
     end
+    
+    @response.value if raise_exceptions
     
     @response.body.strip
 
